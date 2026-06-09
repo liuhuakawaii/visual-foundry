@@ -1,3 +1,5 @@
+import { CaretDown } from '@phosphor-icons/react'
+import { useState } from 'react'
 import type {
   BatchGenerationSettings,
   GenerationMode,
@@ -5,6 +7,7 @@ import type {
   OutputQuality,
   OutputSize,
 } from '../../types/generation'
+import { useI18n } from '../../i18n'
 import { Field } from '../ui/field'
 import { SegmentedControl } from '../ui/segmented-control'
 
@@ -13,25 +16,37 @@ interface SettingsPanelProps {
   onChange: (settings: BatchGenerationSettings) => void
 }
 
-const modeOptions: Array<{ label: string; value: GenerationMode }> = [
-  { label: '图生图', value: 'image-to-image' },
-  { label: '文生图', value: 'text-to-image' },
-]
-
 const sizeOptions: OutputSize[] = ['1024x1024', '1024x1536', '1536x1024']
 const qualityOptions: OutputQuality[] = ['auto', 'high', 'medium', 'low']
 const formatOptions: OutputFormat[] = ['png', 'jpeg', 'webp']
 
+function clampNumber(value: number, min: number, max: number) {
+  if (Number.isNaN(value)) {
+    return min
+  }
+
+  return Math.max(min, Math.min(max, value))
+}
+
 export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
+  const { t } = useI18n()
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const modeOptions: Array<{ label: string; value: GenerationMode }> = [
+    { label: t('settings.mode.imageToImage'), value: 'image-to-image' },
+    { label: t('settings.mode.textToImage'), value: 'text-to-image' },
+  ]
+
   return (
-    <section className="rounded-md border border-stone-900/10 bg-white/72 p-4 shadow-[0_24px_50px_-42px_rgba(60,44,31,0.58)] backdrop-blur">
+    <section className="rounded-md border border-stone-900/10 bg-white/74 p-4 backdrop-blur">
       <div className="mb-4">
-        <h2 className="text-base font-semibold text-stone-950">生成配置</h2>
-        <p className="mt-1 text-xs leading-5 text-stone-500">baseUrl、key 和模型都可覆盖，默认读取 Cloudflare secret。</p>
+        <h2 className="text-base font-semibold text-stone-950">{t('settings.title')}</h2>
+        <p className="mt-1 text-xs leading-5 text-stone-500">
+          {t('settings.description')}
+        </p>
       </div>
 
       <div className="grid gap-4">
-        <Field label="生成模式" helper="后续可扩展视频、局部重绘、参考图组等模式。">
+        <Field label={t('settings.mode')} helper={t('settings.modeHelper')}>
           <SegmentedControl
             value={settings.mode}
             options={modeOptions}
@@ -40,7 +55,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
         </Field>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="尺寸">
+          <Field label={t('settings.size')}>
             <select
               value={settings.outputSize}
               onChange={(event) => onChange({ ...settings, outputSize: event.target.value as OutputSize })}
@@ -53,7 +68,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
               ))}
             </select>
           </Field>
-          <Field label="质量">
+          <Field label={t('settings.quality')}>
             <select
               value={settings.quality}
               onChange={(event) => onChange({ ...settings, quality: event.target.value as OutputQuality })}
@@ -66,7 +81,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
               ))}
             </select>
           </Field>
-          <Field label="格式">
+          <Field label={t('settings.format')}>
             <select
               value={settings.outputFormat}
               onChange={(event) => onChange({ ...settings, outputFormat: event.target.value as OutputFormat })}
@@ -79,7 +94,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
               ))}
             </select>
           </Field>
-          <Field label="每个预设数量">
+          <Field label={t('settings.itemsPerPreset')}>
             <input
               type="number"
               min={1}
@@ -88,13 +103,13 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
               onChange={(event) =>
                 onChange({
                   ...settings,
-                  itemsPerPreset: Number(event.target.value),
+                  itemsPerPreset: clampNumber(Number(event.target.value), 1, 4),
                 })
               }
               className="h-10 rounded-md border border-stone-900/10 bg-[#f9f7f3] px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
             />
           </Field>
-          <Field label="并发数">
+          <Field label={t('settings.concurrency')}>
             <input
               type="number"
               min={1}
@@ -103,7 +118,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
               onChange={(event) =>
                 onChange({
                   ...settings,
-                  concurrency: Number(event.target.value),
+                  concurrency: clampNumber(Number(event.target.value), 1, 4),
                 })
               }
               className="h-10 rounded-md border border-stone-900/10 bg-[#f9f7f3] px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
@@ -111,44 +126,68 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           </Field>
         </div>
 
-        <Field label="Provider Base URL">
-          <input
-            value={settings.provider.baseUrl}
-            onChange={(event) =>
-              onChange({
-                ...settings,
-                provider: { ...settings.provider, baseUrl: event.target.value },
-              })
-            }
-            className="h-10 rounded-md border border-stone-900/10 bg-[#f9f7f3] px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
-          />
-        </Field>
-        <Field label="Model">
-          <input
-            value={settings.provider.model}
-            onChange={(event) =>
-              onChange({
-                ...settings,
-                provider: { ...settings.provider, model: event.target.value },
-              })
-            }
-            className="h-10 rounded-md border border-stone-900/10 bg-[#f9f7f3] px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
-          />
-        </Field>
-        <Field label="临时 API Key" helper="留空时使用 Cloudflare secret。填写后只随本次请求发送到 Worker。">
-          <input
-            type="password"
-            value={settings.provider.apiKey || ''}
-            onChange={(event) =>
-              onChange({
-                ...settings,
-                provider: { ...settings.provider, apiKey: event.target.value },
-              })
-            }
-            placeholder="sk-..."
-            className="h-10 rounded-md border border-stone-900/10 bg-[#f9f7f3] px-3 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-[#476653]"
-          />
-        </Field>
+        <div className="rounded-md border border-stone-900/10 bg-[#f9f7f3]">
+          <button
+            type="button"
+            onClick={() => setIsAdvancedOpen((isOpen) => !isOpen)}
+            className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#476653]"
+            aria-expanded={isAdvancedOpen}
+          >
+            <span>
+              <span className="block text-sm font-semibold text-stone-900">{t('settings.advancedToggle')}</span>
+              <span className="mt-1 block text-xs leading-5 text-stone-500">
+                {t('settings.advancedDescription')}
+              </span>
+            </span>
+            <CaretDown
+              size={17}
+              className={isAdvancedOpen ? 'rotate-180 text-[#476653] transition' : 'text-stone-500 transition'}
+            />
+          </button>
+
+          {isAdvancedOpen ? (
+            <div className="grid gap-4 border-t border-stone-900/10 p-3">
+              <Field label={t('settings.providerBaseUrl')}>
+                <input
+                  value={settings.provider.baseUrl}
+                  onChange={(event) =>
+                    onChange({
+                      ...settings,
+                      provider: { ...settings.provider, baseUrl: event.target.value },
+                    })
+                  }
+                  className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
+                />
+              </Field>
+              <Field label={t('settings.model')}>
+                <input
+                  value={settings.provider.model}
+                  onChange={(event) =>
+                    onChange({
+                      ...settings,
+                      provider: { ...settings.provider, model: event.target.value },
+                    })
+                  }
+                  className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
+                />
+              </Field>
+              <Field label={t('settings.temporaryApiKey')} helper={t('settings.temporaryApiKeyHelper')}>
+                <input
+                  type="password"
+                  value={settings.provider.apiKey || ''}
+                  onChange={(event) =>
+                    onChange({
+                      ...settings,
+                      provider: { ...settings.provider, apiKey: event.target.value },
+                    })
+                  }
+                  placeholder="sk-..."
+                  className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-[#476653]"
+                />
+              </Field>
+            </div>
+          ) : null}
+        </div>
       </div>
     </section>
   )

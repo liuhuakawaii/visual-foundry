@@ -1,4 +1,9 @@
-import type { GenerateImageRequest, GenerateImageResponse } from '../src/types/generation'
+import type {
+  CreateBatchRequest,
+  CreateBatchResponse,
+  GenerateImageRequest,
+  GenerateImageResponse,
+} from '../src/types/generation'
 
 export interface Env {
   ASSETS: Fetcher
@@ -15,3 +20,5 @@ export interface ImageProviderConfig {
 
 export type WorkerGenerateImageRequest = GenerateImageRequest
 export type WorkerGenerateImageResponse = GenerateImageResponse
+export type WorkerCreateBatchRequest = CreateBatchRequest
+export type WorkerCreateBatchResponse = CreateBatchResponse

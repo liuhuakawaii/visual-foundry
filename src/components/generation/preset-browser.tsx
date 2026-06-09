@@ -1,4 +1,5 @@
 import { Check, MagnifyingGlass } from '@phosphor-icons/react'
+import { useI18n } from '../../i18n'
 import { cn } from '../../lib/cn'
 import type { PromptPreset } from '../../types/generation'
 
@@ -17,15 +18,19 @@ export function PresetBrowser({
   onQueryChange,
   onTogglePreset,
 }: PresetBrowserProps) {
+  const { t } = useI18n()
+
   return (
-    <section className="rounded-md border border-stone-900/10 bg-white/72 p-4 shadow-[0_24px_50px_-42px_rgba(60,44,31,0.58)] backdrop-blur">
+    <section className="rounded-md border border-stone-900/10 bg-white/74 p-4 backdrop-blur">
       <div className="mb-3 flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-stone-950">主题预设</h2>
-          <p className="mt-1 text-xs leading-5 text-stone-500">第一批是儿童写真，后续可追加商品图、头像、海报等主题包。</p>
+          <h2 className="text-base font-semibold text-stone-950">{t('preset.title')}</h2>
+          <p className="mt-1 text-xs leading-5 text-stone-500">
+            {t('preset.description')}
+          </p>
         </div>
         <span className="rounded bg-[#e6eee8] px-2 py-1 text-xs font-semibold text-[#385342]">
-          {selectedPresetIds.length} selected
+          {t('preset.selected', { count: selectedPresetIds.length })}
         </span>
       </div>
 
@@ -34,9 +39,18 @@ export function PresetBrowser({
         <input
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="搜索：满月、百岁、户外、极简..."
+          placeholder={t('preset.searchPlaceholder')}
           className="h-10 w-full bg-transparent text-sm text-stone-900 outline-none placeholder:text-stone-400"
         />
+      </div>
+
+      <div className="mb-3 rounded-md border border-dashed border-[#476653]/22 bg-[#eef4ef]/70 px-3 py-2">
+        <p className="text-xs font-semibold text-[#385342]">{t('preset.selectedTrayTitle')}</p>
+        <p className="mt-1 text-xs leading-5 text-[#385342]/75">
+          {selectedPresetIds.length > 0
+            ? t('preset.selected', { count: selectedPresetIds.length })
+            : t('preset.selectedTrayEmpty')}
+        </p>
       </div>
 
       <div className="grid max-h-[520px] gap-2 overflow-y-auto pr-1">

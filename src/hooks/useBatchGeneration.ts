@@ -2,8 +2,8 @@ import { useRef, useState } from 'react'
 import { generateImage } from '../services/generation-api'
 import type {
   BatchGenerationSettings,
-  GenerationJob,
   GenerateImageRequest,
+  GenerationJob,
   UploadedReference,
 } from '../types/generation'
 
@@ -36,10 +36,11 @@ export function useBatchGeneration() {
               return
             }
 
+            const startedAt = Date.now()
             const runningJob: GenerationJob = {
               ...job,
               status: 'running',
-              startedAt: Date.now(),
+              startedAt,
               error: undefined,
             }
             finalJobs.set(runningJob.id, runningJob)
@@ -47,6 +48,8 @@ export function useBatchGeneration() {
 
             const request: GenerateImageRequest = {
               mode: settings.mode,
+              batchId: job.batchId,
+              jobId: job.id,
               prompt: job.prompt,
               image:
                 settings.mode === 'image-to-image' && reference
@@ -67,20 +70,30 @@ export function useBatchGeneration() {
 
             try {
               const result = await generateImage(request, controller.signal)
+              const completedAt = Date.now()
               const completedJob: GenerationJob = {
                 ...runningJob,
                 status: 'completed',
-                completedAt: Date.now(),
+                completedAt,
+                durationMs: completedAt - startedAt,
                 imageUrl: result.imageUrl,
+                providerTraceId: result.providerTraceId,
+                revisedPrompt: result.revisedPrompt,
               }
               finalJobs.set(completedJob.id, completedJob)
               onJobUpdate(completedJob)
             } catch (error) {
+              const completedAt = Date.now()
               const failedJob: GenerationJob = {
                 ...runningJob,
                 status: 'failed',
-                completedAt: Date.now(),
-                error: error instanceof Error ? error.message : '生成失败。',
+                completedAt,
+                durationMs: completedAt - startedAt,
+                error: controller.signal.aborted
+                  ? '生成已取消。'
+                  : error instanceof Error
+                    ? error.message
+                    : '生成失败。',
               }
               finalJobs.set(failedJob.id, failedJob)
               onJobUpdate(failedJob)

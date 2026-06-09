@@ -1,59 +1,66 @@
 # Visual Foundry
 
-Visual Foundry 是一个可扩展的批量视觉生成 Web 工作台。当前首个主题包是儿童写真，后续可以继续扩展商品图、头像、海报、视频生成或其他视觉生产流程。
+Visual Foundry is an extensible batch visual production workspace. The first preset pack focuses on children portraits, but the architecture is intentionally not coupled to one theme, model, or generation mode.
 
-## 当前能力
+## Current Capabilities
 
-- 上传参考图并执行 image-to-image 生成
-- 支持 text-to-image 模式
-- 内置儿童写真主题包和 12 个高质量预设 prompt
-- 支持自定义 prompt 叠加
-- 支持身份保持约束开关
-- 支持批量队列、并发数、失败重试和结果下载
-- 支持配置 `baseUrl`、`apiKey`、`model`
-- Cloudflare Workers + static assets 部署
+- Chinese UI by default with a lightweight typed i18n layer and English toggle.
+- Reference-image upload for image-to-image generation.
+- Text-to-image generation mode.
+- Preset pack model for reusable production themes.
+- Prompt composition with preset constraints and custom add-ons.
+- Identity-preservation guidance toggle.
+- Batch jobs with concurrency, cancellation, failed-job retry, session history, and metadata export.
+- Runtime request validation shared by the frontend and Worker.
+- Cloudflare Workers + static assets deployment.
+- Batch-semantic Worker API for future D1, R2, and Queues migration.
 
-## 本地开发
+## Local Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-## 构建
+## Checks
 
 ```bash
+npm run lint
+npm test
 npm run build
 ```
 
-## Cloudflare 配置
+`npm test` builds the Worker/client bundle first, then uses the Node test runner to cover prompt building, job creation, request schema validation, and Worker API behavior.
 
-生产环境建议使用 Cloudflare secret 保存 API Key：
+## Cloudflare Configuration
+
+Production should store provider credentials as Cloudflare secrets:
 
 ```bash
 wrangler secret put IMAGE_API_KEY
+wrangler secret put IMAGE_API_BASE_URL
+wrangler secret put IMAGE_MODEL
 ```
 
-`wrangler.jsonc` 中默认配置：
+`IMAGE_API_BASE_URL` defaults to `https://api.openai.com/v1`.
+`IMAGE_MODEL` defaults to `gpt-image-1.5`; use `gpt-image-1` if a compatible provider does not support the newer model.
 
-```json
-{
-  "IMAGE_API_BASE_URL": "https://api.openai.com/v1",
-  "IMAGE_MODEL": "gpt-image-1.5"
-}
-```
+Temporary API keys entered in the UI are sent only with the current request and are not persisted by the frontend.
 
-如果你的兼容服务只支持 `gpt-image-1`，可以在配置面板或 `wrangler.jsonc` 中修改模型。
+## API Shape
 
-## 部署
+- `POST /api/generations/image`: synchronous single-image generation used by the current frontend runner.
+- `POST /api/generations/batches`: validates and registers batch metadata for the current runtime.
+- `GET /api/generations/batches/:batchId`: reads in-memory batch status.
+- `POST /api/generations/batches/:batchId/retry-failed`: contract placeholder for durable retry.
+- `POST /api/generations/batches/:batchId/cancel`: contract placeholder for durable cancellation.
 
-```bash
-npm run deploy
-```
+The batch endpoints are intentionally shaped for the next backend step: D1 for batch/job records, R2 for source and result assets, and Cloudflare Queues for durable execution.
 
-## 扩展方式
+## Extension Points
 
-- 新主题包：在 `src/data/preset-packs/` 新增 `PresetPack`，再从 `index.ts` 导出。
-- 新生成模式：扩展 `GenerationMode`，并在 Worker provider adapter 中新增请求处理。
-- 新模型服务：在 `worker/services/` 增加 provider adapter，不要把模型细节写进 React 组件。
-- 持久化任务：后续建议接 Cloudflare D1 记录任务、R2 存图片、Queues 执行后台批量。
+- UI copy: add keys to `src/i18n/messages.ts`; keep `zh-CN` and `en-US` dictionaries aligned.
+- New preset pack: add a `PresetPack` under `src/data/preset-packs/` and export it from `index.ts`.
+- New generation mode: extend `GenerationMode`, request schema validation, UI settings, and provider adapter behavior.
+- New provider: add a provider adapter under `worker/services/`; do not put provider details in React components.
+- Durable production workflow: add D1, R2, and Queues behind the existing batch-semantic API.

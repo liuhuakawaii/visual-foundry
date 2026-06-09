@@ -1,5 +1,6 @@
 import { ImageSquare, UploadSimple, X } from '@phosphor-icons/react'
 import type { ChangeEvent } from 'react'
+import { useI18n } from '../../i18n'
 import { formatFileSize, readReferenceFile } from '../../lib/file'
 import type { UploadedReference } from '../../types/generation'
 import { Button } from '../ui/button'
@@ -17,6 +18,8 @@ export function ReferenceUploader({
   onChange,
   onError,
 }: ReferenceUploaderProps) {
+  const { t } = useI18n()
+
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -30,7 +33,7 @@ export function ReferenceUploader({
       onChange(nextReference)
       onError(null)
     } catch (readError) {
-      onError(readError instanceof Error ? readError.message : '图片读取失败。')
+      onError(readError instanceof Error ? readError.message : t('error.imageReadFailed'))
     }
   }
 
@@ -38,11 +41,13 @@ export function ReferenceUploader({
     <section className="rounded-md border border-stone-900/10 bg-white/72 p-4 shadow-[0_24px_50px_-42px_rgba(60,44,31,0.58)] backdrop-blur">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-stone-950">参考图</h2>
-          <p className="mt-1 text-xs leading-5 text-stone-500">image-to-image 模式会使用它做身份与构图参考。</p>
+          <h2 className="text-base font-semibold text-stone-950">{t('reference.title')}</h2>
+          <p className="mt-1 text-xs leading-5 text-stone-500">
+            {t('reference.description')}
+          </p>
         </div>
         {reference ? (
-          <Button variant="ghost" className="h-9 px-2" aria-label="移除参考图" onClick={() => onChange(null)}>
+          <Button variant="ghost" className="h-9 px-2" aria-label={t('reference.remove')} onClick={() => onChange(null)}>
             <X size={17} />
           </Button>
         ) : null}
@@ -53,7 +58,7 @@ export function ReferenceUploader({
         {reference ? (
           <div className="w-full">
             <div className="overflow-hidden rounded-md border border-stone-900/10 bg-stone-100">
-              <img src={reference.dataUrl} alt="已上传参考图预览" className="aspect-[4/5] w-full object-cover" />
+              <img src={reference.dataUrl} alt={t('reference.previewAlt')} className="aspect-[4/5] w-full object-cover" />
             </div>
             <div className="mt-3 flex items-center justify-between gap-3 text-xs text-stone-500">
               <span className="truncate">{reference.name}</span>
@@ -67,9 +72,11 @@ export function ReferenceUploader({
             </span>
             <div className="flex items-center gap-2 text-sm font-semibold text-stone-900">
               <UploadSimple size={17} />
-              上传 PNG / JPEG / WebP
+              {t('reference.uploadCta')}
             </div>
-            <p className="mt-2 max-w-xs text-xs leading-5 text-stone-500">建议使用清晰正脸或半身照，文件不超过 8MB。</p>
+            <p className="mt-2 max-w-xs text-xs leading-5 text-stone-500">
+              {t('reference.uploadHint')}
+            </p>
           </div>
         )}
       </label>

@@ -18,6 +18,9 @@ export const childrenPortraitPack: PresetPack = {
   title: '儿童写真基础主题',
   description: '面向满月、百岁、周岁和日常纪念照的真实写真主题包，强调身份保持、自然光线和温柔影调。',
   category: 'children-portrait',
+  audience: '亲子摄影工作室、儿童影楼、家庭纪念照创作者',
+  recommendedInputs: ['清晰正脸或半身参考图', '自然表情', '无遮挡五官'],
+  qualityGuidelines: ['保持儿童身份一致', '避免过度磨皮和廉价装饰', '优先真实摄影质感'],
   presets: [
     {
       id: 'moon-soft-cream-studio',
@@ -107,7 +110,7 @@ export const childrenPortraitPack: PresetPack = {
       id: 'spring-festival-muted',
       title: '春节克制喜庆',
       category: 'children-portrait',
-      description: '春节主题但避免高饱和廉价红金。',
+      description: '春节主题但避免高饱和和廉价红金。',
       mode: 'image-to-image',
       tags: ['春节', '节日', '中式', '家庭'],
       identityGuidance,
