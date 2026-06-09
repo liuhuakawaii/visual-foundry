@@ -8,6 +8,7 @@ import type {
   OutputSize,
 } from '../../types/generation'
 import { useI18n } from '../../i18n'
+import { gptImageModelOptions, isKnownGptImageModel } from '../../lib/generation-models'
 import { Field } from '../ui/field'
 import { SegmentedControl } from '../ui/segmented-control'
 
@@ -19,6 +20,7 @@ interface SettingsPanelProps {
 const sizeOptions: OutputSize[] = ['1024x1024', '1024x1536', '1536x1024']
 const qualityOptions: OutputQuality[] = ['auto', 'high', 'medium', 'low']
 const formatOptions: OutputFormat[] = ['png', 'jpeg', 'webp']
+const customModelValue = '__custom_model__'
 
 function clampNumber(value: number, min: number, max: number) {
   if (Number.isNaN(value)) {
@@ -31,13 +33,17 @@ function clampNumber(value: number, min: number, max: number) {
 export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
   const { t } = useI18n()
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const [isCustomModelMode, setIsCustomModelMode] = useState(
+    () => !isKnownGptImageModel(settings.provider.model),
+  )
   const modeOptions: Array<{ label: string; value: GenerationMode }> = [
     { label: t('settings.mode.imageToImage'), value: 'image-to-image' },
     { label: t('settings.mode.textToImage'), value: 'text-to-image' },
   ]
+  const selectedModelValue = isCustomModelMode ? customModelValue : settings.provider.model
 
   return (
-    <section className="rounded-md border border-stone-900/10 bg-white/74 p-4 backdrop-blur">
+    <section className="rounded-md border border-stone-900/10 bg-white/72 p-3 backdrop-blur-xl">
       <div className="mb-4">
         <h2 className="text-base font-semibold text-stone-950">{t('settings.title')}</h2>
         <p className="mt-1 text-xs leading-5 text-stone-500">
@@ -126,7 +132,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           </Field>
         </div>
 
-        <div className="rounded-md border border-stone-900/10 bg-[#f9f7f3]">
+        <div className="rounded-md border border-stone-900/10 bg-[#f7f8f5]">
           <button
             type="button"
             onClick={() => setIsAdvancedOpen((isOpen) => !isOpen)}
@@ -147,7 +153,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
 
           {isAdvancedOpen ? (
             <div className="grid gap-4 border-t border-stone-900/10 p-3">
-              <Field label={t('settings.providerBaseUrl')}>
+              <Field label={t('settings.providerBaseUrl')} helper={t('settings.providerBaseUrlHelper')}>
                 <input
                   value={settings.provider.baseUrl}
                   onChange={(event) =>
@@ -159,17 +165,55 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
                   className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
                 />
               </Field>
-              <Field label={t('settings.model')}>
-                <input
-                  value={settings.provider.model}
-                  onChange={(event) =>
-                    onChange({
-                      ...settings,
-                      provider: { ...settings.provider, model: event.target.value },
-                    })
-                  }
-                  className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
-                />
+              <Field label={t('settings.model')} helper={t('settings.modelHelper')}>
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                  <select
+                    value={selectedModelValue}
+                    onChange={(event) => {
+                      if (event.target.value === customModelValue) {
+                        setIsCustomModelMode(true)
+                        onChange({
+                          ...settings,
+                          provider: {
+                            ...settings.provider,
+                            model: isKnownGptImageModel(settings.provider.model)
+                              ? ''
+                              : settings.provider.model,
+                          },
+                        })
+                        return
+                      }
+
+                      setIsCustomModelMode(false)
+                      onChange({
+                        ...settings,
+                        provider: { ...settings.provider, model: event.target.value },
+                      })
+                    }}
+                    className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none focus:border-[#476653]"
+                  >
+                    {gptImageModelOptions.map((modelOption) => (
+                      <option key={modelOption.id} value={modelOption.id}>
+                        {modelOption.label}
+                      </option>
+                    ))}
+                    <option value={customModelValue}>{t('settings.modelCustomOption')}</option>
+                  </select>
+
+                  {isCustomModelMode ? (
+                    <input
+                      value={settings.provider.model}
+                      onChange={(event) =>
+                        onChange({
+                          ...settings,
+                          provider: { ...settings.provider, model: event.target.value },
+                        })
+                      }
+                      placeholder={t('settings.customModelPlaceholder')}
+                      className="h-10 rounded-md border border-stone-900/10 bg-white px-3 text-sm text-stone-900 outline-none placeholder:text-stone-400 focus:border-[#476653]"
+                    />
+                  ) : null}
+                </div>
               </Field>
               <Field label={t('settings.temporaryApiKey')} helper={t('settings.temporaryApiKeyHelper')}>
                 <input

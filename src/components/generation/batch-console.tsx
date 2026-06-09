@@ -30,11 +30,11 @@ export function BatchConsole({
   const { t } = useI18n()
 
   return (
-    <section className="sticky top-3 z-20 rounded-md border border-stone-900/10 bg-white/90 p-4 shadow-[0_18px_46px_-34px_rgba(60,44,31,0.52)] backdrop-blur">
-      <div className="flex flex-col justify-between gap-4 xl:flex-row xl:items-center">
+    <section className="sticky top-3 z-20 rounded-md border border-stone-900/10 bg-[#fbfcf9]/92 p-3 shadow-[0_18px_58px_-44px_rgba(45,39,31,0.5)] backdrop-blur-xl">
+      <div className="flex flex-col justify-between gap-3 xl:flex-row xl:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold text-stone-950">{t('production.title')}</h2>
+            <h2 className="text-base font-semibold tracking-tight text-stone-950">{t('production.title')}</h2>
             <StatusBadge
               active={hasReference}
               icon={hasReference ? <CheckCircle size={15} weight="duotone" /> : <UploadSimple size={15} />}
@@ -67,13 +67,13 @@ export function BatchConsole({
         </div>
       </div>
 
-      <div className="mt-4 border-t border-stone-900/8 pt-3">
+      <div className="mt-3 border-t border-stone-900/8 pt-3">
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs font-semibold uppercase text-stone-500">{t('production.selectedPresets')}</p>
           <span className="font-mono text-xs text-stone-400">{selectedPresets.length}</span>
         </div>
         {selectedPresets.length === 0 ? (
-          <p className="rounded-md border border-dashed border-stone-900/12 bg-[#f9f7f3] px-3 py-2 text-xs leading-5 text-stone-500">
+          <p className="rounded-md border border-dashed border-stone-900/12 bg-white/60 px-3 py-2 text-xs leading-5 text-stone-500">
             {t('production.noSelectedPresets')}
           </p>
         ) : (
@@ -84,7 +84,7 @@ export function BatchConsole({
                 key={preset.id}
                 aria-label={t('preset.removeSelected', { title: preset.title })}
                 onClick={() => onTogglePreset(preset.id)}
-                className="shrink-0 rounded-md border border-[#476653]/20 bg-[#eef4ef] px-3 py-2 text-left text-xs font-semibold text-[#385342] transition hover:border-[#476653]/40 hover:bg-[#e5eee7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#476653]"
+                className="shrink-0 rounded border border-[#476653]/18 bg-[#eef4ef] px-3 py-1.5 text-left text-xs font-semibold text-[#385342] transition hover:border-[#476653]/40 hover:bg-[#e5eee7] active:translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#476653]"
               >
                 {preset.title}
               </button>

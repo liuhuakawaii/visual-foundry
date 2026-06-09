@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer } from 'react'
-import { allPresets } from '../data/preset-packs'
+import { allPresets, presetPacks, workflowTemplates } from '../data/preset-packs'
 import { defaultGenerationSettings, defaultSelectedPresetIds } from '../lib/generation-defaults'
 import {
   createGenerationBatch,
@@ -10,6 +10,7 @@ import {
   resolveBatchStatus,
 } from '../lib/jobs'
 import { buildPrompt } from '../lib/prompt-builder'
+import { persistGenerationSettings, readPersistedGenerationSettings } from '../lib/generation-settings-storage'
 import { createBatch } from '../services/generation-api'
 import type {
   BatchGenerationSettings,
@@ -25,6 +26,9 @@ interface WorkspaceState {
   settings: BatchGenerationSettings
   reference: UploadedReference | null
   referenceError: string | null
+  activePackId: string
+  activeTag: string | null
+  activeWorkflowTemplateId: string
   selectedPresetIds: string[]
   presetQuery: string
   customPrompt: string
@@ -40,6 +44,9 @@ type WorkspaceAction =
   | { type: 'settingsChanged'; settings: BatchGenerationSettings }
   | { type: 'referenceChanged'; reference: UploadedReference | null }
   | { type: 'referenceErrorChanged'; error: string | null }
+  | { type: 'activePackChanged'; packId: string }
+  | { type: 'activeTagChanged'; tag: string | null }
+  | { type: 'workflowTemplateChanged'; templateId: string }
   | { type: 'presetToggled'; presetId: string }
   | { type: 'presetQueryChanged'; query: string }
   | { type: 'customPromptChanged'; prompt: string }
@@ -81,9 +88,12 @@ function createInitialState(): WorkspaceState {
   const history = readSessionHistory()
 
   return {
-    settings: defaultGenerationSettings,
+    settings: readPersistedGenerationSettings(defaultGenerationSettings),
     reference: null,
     referenceError: null,
+    activePackId: presetPacks[0]?.id || '',
+    activeTag: null,
+    activeWorkflowTemplateId: workflowTemplates[0]?.id || '',
     selectedPresetIds: defaultSelectedPresetIds,
     presetQuery: '',
     customPrompt: '',
@@ -129,6 +139,41 @@ function reducer(state: WorkspaceState, action: WorkspaceAction): WorkspaceState
 
   if (action.type === 'referenceErrorChanged') {
     return { ...state, referenceError: action.error }
+  }
+
+  if (action.type === 'activePackChanged') {
+    const selectedPack = presetPacks.find((pack) => pack.id === action.packId)
+    const selectedPresetIds =
+      selectedPack?.availability === 'available'
+        ? state.selectedPresetIds.filter((presetId) =>
+            selectedPack.presets.some((preset) => preset.id === presetId),
+          )
+        : []
+
+    return {
+      ...state,
+      activePackId: action.packId,
+      activeTag: null,
+      selectedPresetIds,
+      workflowError: null,
+    }
+  }
+
+  if (action.type === 'activeTagChanged') {
+    return { ...state, activeTag: action.tag }
+  }
+
+  if (action.type === 'workflowTemplateChanged') {
+    const template = workflowTemplates.find((workflowTemplate) => workflowTemplate.id === action.templateId)
+    return template
+      ? {
+          ...state,
+          activeWorkflowTemplateId: action.templateId,
+          activePackId: template.recommendedPackId,
+          activeTag: null,
+          workflowError: null,
+        }
+      : state
   }
 
   if (action.type === 'presetToggled') {
@@ -230,14 +275,20 @@ function findSelectedPresets(selectedPresetIds: string[]): PromptPreset[] {
   return allPresets.filter((preset) => selectedPresetIds.includes(preset.id))
 }
 
-function getFilteredPresets(query: string): PromptPreset[] {
+function getFilteredPresets(packId: string, query: string, activeTag: string | null): PromptPreset[] {
+  const activePack = presetPacks.find((pack) => pack.id === packId)
+  const packPresets = activePack?.availability === 'available' ? activePack.presets : []
   const normalizedQuery = query.trim().toLowerCase()
 
-  if (!normalizedQuery) {
-    return allPresets
-  }
+  return packPresets.filter((preset) => {
+    if (activeTag && !preset.tags.includes(activeTag)) {
+      return false
+    }
 
-  return allPresets.filter((preset) => {
+    if (!normalizedQuery) {
+      return true
+    }
+
     const searchableText = [preset.title, preset.description, ...preset.tags].join(' ').toLowerCase()
     return searchableText.includes(normalizedQuery)
   })
@@ -247,7 +298,10 @@ export function useGenerationWorkspace() {
   const [state, dispatch] = useReducer(reducer, undefined, createInitialState)
   const { isRunning, runBatch, abortBatch } = useBatchGeneration()
 
-  const filteredPresets = useMemo(() => getFilteredPresets(state.presetQuery), [state.presetQuery])
+  const filteredPresets = useMemo(
+    () => getFilteredPresets(state.activePackId, state.presetQuery, state.activeTag),
+    [state.activePackId, state.activeTag, state.presetQuery],
+  )
   const selectedPresets = useMemo(
     () => findSelectedPresets(state.selectedPresetIds),
     [state.selectedPresetIds],
@@ -257,11 +311,20 @@ export function useGenerationWorkspace() {
     [state.currentBatchId, state.jobs],
   )
   const activePreset = selectedPresets[0] || null
+  const activePack = presetPacks.find((pack) => pack.id === state.activePackId) || presetPacks[0]
+  const availableTags = useMemo(
+    () => Array.from(new Set((activePack?.presets || []).flatMap((preset) => preset.tags))),
+    [activePack],
+  )
   const pendingJobsCount = selectedPresets.length * state.settings.itemsPerPreset
 
   useEffect(() => {
     persistSessionHistory(state.batches, state.jobs)
   }, [state.batches, state.jobs])
+
+  useEffect(() => {
+    persistGenerationSettings(state.settings)
+  }, [state.settings])
 
   async function startGeneration() {
     if (state.settings.mode === 'image-to-image' && !state.reference) {
@@ -380,6 +443,8 @@ export function useGenerationWorkspace() {
   return {
     ...state,
     activePreset,
+    activePack,
+    availableTags,
     currentBatchJobs,
     filteredPresets,
     isRunning,
@@ -388,6 +453,10 @@ export function useGenerationWorkspace() {
     setSettings: (settings: BatchGenerationSettings) => dispatch({ type: 'settingsChanged', settings }),
     setReference: (reference: UploadedReference | null) => dispatch({ type: 'referenceChanged', reference }),
     setReferenceError: (error: string | null) => dispatch({ type: 'referenceErrorChanged', error }),
+    setActivePackId: (packId: string) => dispatch({ type: 'activePackChanged', packId }),
+    setActiveTag: (tag: string | null) => dispatch({ type: 'activeTagChanged', tag }),
+    setActiveWorkflowTemplateId: (templateId: string) =>
+      dispatch({ type: 'workflowTemplateChanged', templateId }),
     setPresetQuery: (query: string) => dispatch({ type: 'presetQueryChanged', query }),
     setCustomPrompt: (prompt: string) => dispatch({ type: 'customPromptChanged', prompt }),
     setPreserveIdentity: (preserveIdentity: boolean) =>

@@ -3,8 +3,12 @@ import test from 'node:test'
 import { createGenerationBatch, createJobsFromPresets, countJobsByStatus, resolveBatchStatus } from '../src/lib/jobs.ts'
 import { buildPrompt } from '../src/lib/prompt-builder.ts'
 import { validateCreateBatchRequest, validateGenerateImageRequest } from '../src/lib/generation-schema.ts'
+import {
+  createPersistableGenerationSettings,
+  mergePersistedGenerationSettings,
+} from '../src/lib/generation-settings-storage.ts'
 import { defaultLocale, messages } from '../src/i18n/messages.ts'
-import type { PromptPreset } from '../src/types/generation.ts'
+import type { BatchGenerationSettings, PromptPreset } from '../src/types/generation.ts'
 
 const preset: PromptPreset = {
   id: 'studio-portrait',
@@ -18,6 +22,20 @@ const preset: PromptPreset = {
   identityGuidance: 'Preserve identity.',
   recommendedSize: '1024x1536',
   recommendedQuality: 'high',
+}
+
+const fallbackGenerationSettings: BatchGenerationSettings = {
+  mode: 'image-to-image',
+  outputSize: '1024x1536',
+  quality: 'high',
+  outputFormat: 'png',
+  itemsPerPreset: 1,
+  concurrency: 1,
+  provider: {
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-image-1.5',
+    apiKey: '',
+  },
 }
 
 test('buildPrompt combines identity, preset, custom text, guardrails, and negative prompt', () => {
@@ -73,7 +91,7 @@ test('i18n defaults to zh-CN and keeps locale dictionaries aligned', () => {
 
   assert.equal(defaultLocale, 'zh-CN')
   assert.deepEqual(enKeys, zhKeys)
-  assert.equal(messages['zh-CN']['production.start'], '开始批量生成')
+  assert.equal(messages['zh-CN']['production.start'], '\u5f00\u59cb\u6279\u91cf\u751f\u6210')
 })
 
 test('validateGenerateImageRequest rejects missing reference image for image-to-image', () => {
@@ -137,4 +155,33 @@ test('validateCreateBatchRequest accepts bounded batch metadata', () => {
 
   assert.equal(result.success, true)
   assert.equal(result.data?.jobs.length, 1)
+})
+
+test('generation settings persistence keeps provider model and strips API keys', () => {
+  const persistedSettings = createPersistableGenerationSettings({
+    ...fallbackGenerationSettings,
+    provider: {
+      baseUrl: 'https://api-cn.hi-code.cc/v1',
+      model: 'gpt-image-2',
+      apiKey: 'secret-key',
+    },
+  })
+
+  assert.equal(persistedSettings.provider.baseUrl, 'https://api-cn.hi-code.cc/v1')
+  assert.equal(persistedSettings.provider.model, 'gpt-image-2')
+  assert.equal('apiKey' in persistedSettings.provider, false)
+
+  const mergedSettings = mergePersistedGenerationSettings(
+    {
+      ...persistedSettings,
+      provider: {
+        ...persistedSettings.provider,
+        apiKey: 'should-not-restore',
+      },
+    },
+    fallbackGenerationSettings,
+  )
+
+  assert.equal(mergedSettings.provider.model, 'gpt-image-2')
+  assert.equal(mergedSettings.provider.apiKey, '')
 })

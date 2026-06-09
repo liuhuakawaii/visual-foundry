@@ -14,6 +14,13 @@ export type PresetCategory =
   | 'editorial'
   | 'custom'
 
+export type PackAvailability = 'available' | 'planned'
+
+export type WorkflowTemplateId =
+  | 'portrait-studio-batch'
+  | 'commerce-sku-main'
+  | 'personal-avatar-set'
+
 export type BatchStatus = 'draft' | 'running' | 'completed' | 'partially_failed' | 'failed' | 'canceled'
 
 export type ReviewStatus = 'unreviewed' | 'selected' | 'rejected'
@@ -39,10 +46,20 @@ export interface PresetPack {
   title: string
   description: string
   category: PresetCategory
+  availability?: PackAvailability
   audience?: string
   recommendedInputs?: string[]
   qualityGuidelines?: string[]
   presets: PromptPreset[]
+}
+
+export interface WorkflowTemplate {
+  id: WorkflowTemplateId
+  title: string
+  description: string
+  category: PresetCategory
+  recommendedPackId: string
+  expectedOutput: string
 }
 
 export interface RuntimeProviderConfig {

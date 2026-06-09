@@ -22,7 +22,7 @@ export function PromptComposer({
   const { t } = useI18n()
 
   return (
-    <section className="rounded-md border border-stone-900/10 bg-white/72 p-4 shadow-[0_24px_50px_-42px_rgba(60,44,31,0.58)] backdrop-blur">
+    <section className="rounded-md border border-stone-900/10 bg-white/70 p-3 backdrop-blur-xl">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-stone-950">{t('prompt.title')}</h2>
@@ -34,7 +34,7 @@ export function PromptComposer({
       </div>
 
       <div className="grid gap-4">
-        <label className="flex items-start gap-3 rounded-md border border-stone-900/10 bg-[#f9f7f3] p-3">
+        <label className="flex items-start gap-3 rounded-md border border-stone-900/10 bg-[#f7f8f5] p-3 transition hover:bg-white">
           <input
             type="checkbox"
             checked={preserveIdentity}
@@ -54,12 +54,12 @@ export function PromptComposer({
             value={customPrompt}
             onChange={(event) => onCustomPromptChange(event.target.value)}
             rows={5}
-            className="resize-none rounded-md border border-stone-900/10 bg-[#f9f7f3] px-3 py-2 text-sm leading-6 text-stone-900 outline-none placeholder:text-stone-400 focus:border-[#476653]"
+            className="resize-none rounded-md border border-stone-900/10 bg-[#f7f8f5] px-3 py-2 text-sm leading-6 text-stone-900 outline-none placeholder:text-stone-400 focus:border-[#476653]"
             placeholder={t('prompt.customPlaceholder')}
           />
         </Field>
 
-        <div className="rounded-md border border-stone-900/10 bg-stone-950 p-3 text-stone-100">
+        <div className="rounded-md border border-stone-900/10 bg-[#252922] p-3 text-stone-100">
           <div className="mb-2 flex items-center justify-between gap-3">
             <p className="text-xs font-semibold uppercase text-stone-400">{t('prompt.previewLabel')}</p>
             <p className="text-xs text-stone-500">{activePreset?.title || t('prompt.noPreset')}</p>

@@ -70,19 +70,21 @@ export function ResultGallery({
     { label: t('gallery.filter.failed'), value: 'failed' },
   ]
   const visibleJobs = getVisibleJobs(jobs, filter, currentBatchId)
+  const selectedJobs = jobs.filter((job) => job.reviewStatus === 'selected' && job.status === 'completed')
+  const exportJobs = selectedJobs.length > 0 ? selectedJobs : visibleJobs
   const completedJobs = visibleJobs.filter((job) => job.status === 'completed' && job.imageUrl)
   const failedJobs = visibleJobs.filter((job) => job.status === 'failed')
   const hasVisibleResults = completedJobs.length > 0 || failedJobs.length > 0
 
   return (
-    <section className="rounded-md border border-stone-900/10 bg-white/84 p-4 shadow-[0_24px_58px_-44px_rgba(60,44,31,0.48)] backdrop-blur">
+    <section className="rounded-md border border-stone-900/10 bg-[#fbfcf9]/88 p-3 shadow-[0_24px_80px_-56px_rgba(45,39,31,0.52)] backdrop-blur-xl sm:p-4">
       <div className="mb-4 flex flex-col justify-between gap-3 md:flex-row md:items-start">
         <div>
-          <h2 className="text-base font-semibold text-stone-950">{t('gallery.title')}</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-stone-950">{t('gallery.title')}</h2>
           <p className="mt-1 text-xs leading-5 text-stone-500">{t('gallery.description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-md border border-stone-900/10 bg-[#f9f7f3] p-1">
+          <div className="flex max-w-full overflow-x-auto rounded-md border border-stone-900/10 bg-[#f7f8f5] p-1">
             {filterOptions.map((option) => (
               <button
                 type="button"
@@ -101,10 +103,10 @@ export function ResultGallery({
             variant="secondary"
             className="h-10 px-3"
             icon={<Export size={17} />}
-            disabled={visibleJobs.length === 0}
-            onClick={() => downloadJsonManifest('visual-foundry-manifest.json', batches, visibleJobs)}
+            disabled={exportJobs.length === 0}
+            onClick={() => downloadJsonManifest('visual-foundry-selected-manifest.json', batches, exportJobs)}
           >
-            {t('gallery.export')}
+            {selectedJobs.length > 0 ? t('gallery.exportSelected') : t('gallery.export')}
           </Button>
           <span className="hidden h-9 w-9 items-center justify-center rounded-md bg-[#f0e4d0] text-[#7c5f3f] sm:flex">
             <ImagesSquare size={19} weight="duotone" />
@@ -113,7 +115,7 @@ export function ResultGallery({
       </div>
 
       {!hasVisibleResults ? (
-        <div className="grid min-h-[360px] place-items-center rounded-md border border-dashed border-stone-900/12 bg-[#f9f7f3] px-6 text-center">
+        <div className="grid min-h-[420px] place-items-center rounded-md border border-dashed border-stone-900/12 bg-[#f7f8f5] px-6 text-center">
           <div>
             <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-white text-[#476653]">
               <ImagesSquare size={24} weight="duotone" />
@@ -123,7 +125,7 @@ export function ResultGallery({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
           {completedJobs.map((job) => (
             <CompletedResultCard
               key={job.id}
@@ -185,7 +187,7 @@ function CompletedResultCard({
   return (
     <article
       className={cn(
-        'overflow-hidden rounded-md border bg-white transition',
+        'overflow-hidden rounded-md border bg-white transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_54px_-44px_rgba(45,39,31,0.62)]',
         isSelected && 'border-[#476653]/45 ring-2 ring-[#476653]/12',
         isRejected && 'border-stone-900/10 opacity-72',
         !isSelected && !isRejected && 'border-stone-900/10',
@@ -239,17 +241,17 @@ function CompletedResultCard({
           </Button>
         </div>
 
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          <Button className="px-2" icon={<DownloadSimple size={17} />} onClick={onDownload}>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <Button className="px-2 text-xs" icon={<DownloadSimple size={16} />} onClick={onDownload}>
             {t('gallery.download')}
           </Button>
-          <Button variant="secondary" className="px-2" icon={<ClipboardText size={17} />} onClick={() => void copyPrompt()}>
+          <Button variant="secondary" className="px-2 text-xs" icon={<ClipboardText size={16} />} onClick={() => void copyPrompt()}>
             {copyState === 'done' ? t('gallery.copyDone') : t('gallery.copyPrompt')}
           </Button>
           <Button
             variant="secondary"
-            className="px-2"
-            icon={<Info size={17} />}
+            className="col-span-2 px-2 text-xs"
+            icon={<Info size={16} />}
             onClick={() => setIsMetadataOpen((isOpen) => !isOpen)}
           >
             {t('gallery.metadata')}

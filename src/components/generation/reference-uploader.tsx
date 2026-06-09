@@ -38,7 +38,7 @@ export function ReferenceUploader({
   }
 
   return (
-    <section className="rounded-md border border-stone-900/10 bg-white/72 p-4 shadow-[0_24px_50px_-42px_rgba(60,44,31,0.58)] backdrop-blur">
+    <section className="rounded-md border border-stone-900/10 bg-white/74 p-3 shadow-[0_18px_58px_-48px_rgba(45,39,31,0.46)] backdrop-blur-xl">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold text-stone-950">{t('reference.title')}</h2>
@@ -53,7 +53,7 @@ export function ReferenceUploader({
         ) : null}
       </div>
 
-      <label className="group grid cursor-pointer place-items-center rounded-md border border-dashed border-stone-900/16 bg-[#f9f7f3] p-3 transition hover:border-[#476653]/45 hover:bg-white">
+      <label className="group grid cursor-pointer place-items-center rounded-md border border-dashed border-stone-900/16 bg-[#f7f8f5] p-3 transition duration-300 hover:border-[#476653]/45 hover:bg-white active:scale-[0.995]">
         <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={handleFileChange} />
         {reference ? (
           <div className="w-full">
@@ -67,7 +67,7 @@ export function ReferenceUploader({
           </div>
         ) : (
           <div className="flex min-h-52 flex-col items-center justify-center text-center">
-            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-white text-[#476653] shadow-[0_18px_42px_-32px_rgba(60,44,31,0.48)]">
+            <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-white text-[#476653] shadow-[0_18px_42px_-32px_rgba(60,44,31,0.48)] transition group-hover:-translate-y-0.5">
               <ImageSquare size={24} weight="duotone" />
             </span>
             <div className="flex items-center gap-2 text-sm font-semibold text-stone-900">

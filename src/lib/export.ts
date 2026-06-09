@@ -14,6 +14,7 @@ interface ExportManifest {
     imageUrl?: string
     error?: string
     retryCount: number
+    reviewStatus?: GenerationJob['reviewStatus']
     durationMs?: number
     providerTraceId?: string
   }>
@@ -34,6 +35,7 @@ export function downloadJsonManifest(fileName: string, batches: GenerationBatch[
       imageUrl: job.imageUrl,
       error: job.error,
       retryCount: job.retryCount,
+      reviewStatus: job.reviewStatus,
       durationMs: job.durationMs,
       providerTraceId: job.providerTraceId,
     })),
